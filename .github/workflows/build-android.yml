@@ -65,14 +65,16 @@ jobs:
         fi
 
     - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
+      uses: android-actions/setup-android@v4
+      with:
+        packages: 'platform-tools'
 
     - name: Install Android NDK
       run: |
         sdkmanager --install "ndk;${{ env.NDK_VERSION }}"
         echo "ANDROID_NDK=$ANDROID_HOME/ndk/${{ env.NDK_VERSION }}" >> $GITHUB_ENV
 
-    # 1. CACHE SUCHEN UND LADEN (Key v9)
+    # 1. CACHE SUCHEN UND LADEN
     - name: Restore Kodi Dependencies
       id: cache-deps
       uses: actions/cache/restore@v4
@@ -81,9 +83,9 @@ jobs:
           ${{ github.workspace }}/xbmc-depends
           ${{ github.workspace }}/tools/depends
           ${{ github.workspace }}/.tarballs
-        key: ${{ runner.os }}-kodi-depends-v10-${{ hashFiles('tools/depends/Makefile') }}
+        key: ${{ runner.os }}-kodi-depends-v11-${{ hashFiles('tools/depends/Makefile') }}
 
-    # 2. ABHÄNGIGKEITEN BAUEN (Wird dank v9-Cache jetzt in 0s übersprungen!)
+    # 2. ABHÄNGIGKEITEN BAUEN
     - name: Build dependencies (Zwei-Phasen-Build)
       if: steps.cache-deps.outputs.cache-hit != 'true'
       run: |
@@ -105,7 +107,7 @@ jobs:
                     --with-rendersystem=gles
         make -j$(nproc)
 
-    # 3. CACHE SPEICHERN (Nur falls er nicht existierte)
+    # 3. CACHE SPEICHERN
     - name: Save Kodi Dependencies
       if: steps.cache-deps.outputs.cache-hit != 'true'
       uses: actions/cache/save@v4
@@ -136,7 +138,6 @@ jobs:
         cd build
         export GRADLE_OPTS="-Xmx2048m"
         
-        # ZURÜCK AUF VOLLE POWER
         make -j$(nproc)
         
         mkdir -p ~/.android
